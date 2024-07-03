@@ -1,0 +1,37 @@
+# Stage 1: Build the application (builder)
+
+# Use eclipse-temurin:21.0.2_13-jdk-jammy image with JDK for building
+FROM eclipse-temurin:21.0.2_13-jdk-jammy AS builder
+
+# Set working directory for the builder stage
+WORKDIR /app
+
+# Copy existing Maven configuration (.mvn directory) and mvnw wrapper script
+COPY .mvn/ .mvn
+COPY mvnw pom.xml ./
+
+# Run 'mvnw dependency:go-offline' to potentially avoid downloading dependencies (if already available locally)
+RUN ./mvnw dependency:go-offline
+
+# Copy project source code from the current directory to /opt/app/src
+COPY ./src ./src
+
+# Build the application using Maven with 'mvnw clean install'
+RUN ./mvnw clean install
+
+
+# Stage 2: Run the application (final)
+# Use eclipse-temurin:21.0.2_13-jre-jammy image with JRE for running (slimmer)
+FROM eclipse-temurin:21.0.2_13-jre-jammy AS final
+
+# Set working directory for the final stage
+WORKDIR /opt/app
+
+# Expose port 8080, typically used by Spring Boot applications
+EXPOSE 8080
+
+# Copy JAR file(s) built in stage 1 from the builder stage
+COPY --from=builder /app/target/*.jar  /app/*.jar
+
+# Define the entrypoint command to run the application using 'java -jar'
+ENTRYPOINT ["java", "-jar", "/opt/app/*.jar"]

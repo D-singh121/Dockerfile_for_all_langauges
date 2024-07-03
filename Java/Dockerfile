@@ -5,7 +5,7 @@ FROM openjdk:17-jdk-slim-buster
 WORKDIR /app
 
 # Copy the jar file into the container
-COPY target/myapp.jar .
+COPY target/myapp.jar ./
 
 # Run the application
 CMD ["java", "-jar", "myapp.jar"]
